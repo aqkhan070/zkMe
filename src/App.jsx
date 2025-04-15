@@ -13,6 +13,25 @@ const App = () => {
   const [balance, setBalance] = useState(null);
   const [kycStatus, setKycStatus] = useState(null);
   const [showMetaMaskDialog, setShowMetaMaskDialog] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState('https://metamask.io/download/');
+
+  useEffect(() => {
+    // Detect browser and set appropriate download URL
+    const userAgent = navigator.userAgent.toLowerCase();
+    let url = 'https://metamask.io/download/';
+
+    if (userAgent.includes('chrome')) {
+      url = 'https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn';
+    } else if (userAgent.includes('firefox')) {
+      url = 'https://addons.mozilla.org/en-US/firefox/addon/ether-metamask/';
+    } else if (userAgent.includes('edge')) {
+      url = 'https://microsoftedge.microsoft.com/addons/detail/metamask/ejbalbakoplchlghecdalmeeeajnimhm';
+    } else if (userAgent.includes('safari')) {
+      url = 'https://apps.apple.com/us/app/metamask-blockchain-wallet/id1438144202';
+    }
+
+    setDownloadUrl(url);
+  }, []);
 
   const handleConnect = async () => {
     if (!window.ethereum) {
@@ -167,7 +186,7 @@ const App = () => {
   }, []);
 
   const MetaMaskDialog = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-[#edffee] rounded-xl shadow-lg p-6 max-w-md w-full mx-4 border-2 border-green-500">
         <div className="flex items-center space-x-3 mb-4">
           <Wallet className="w-6 h-6 text-[#8fef56]" />
@@ -176,18 +195,18 @@ const App = () => {
         <p className="text-gray-600 mb-6">
           To use this application, you need to install MetaMask, a cryptocurrency wallet for your browser.
         </p>
-        <div className="space-y-3">
+        <div className="flex space-x-3">
           <a
-            href="https://metamask.io/download/"
+            href={downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg transition-colors text-center"
+            className="flex-1 bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg transition-colors text-center"
           >
             Install MetaMask
           </a>
           <button
             onClick={() => setShowMetaMaskDialog(false)}
-            className="block w-full bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors border border-gray-300"
+            className="flex-1 bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors border border-gray-300"
           >
             Cancel
           </button>
