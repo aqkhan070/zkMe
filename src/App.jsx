@@ -209,7 +209,7 @@ const App = () => {
                   onClick={handleUnderDevelopment}
                   className="bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg"
                 >
-                  Under development
+                  Verification Now
                 </button>
 
                 {kycStatus === 'success' && (
