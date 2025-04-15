@@ -12,10 +12,11 @@ const App = () => {
   const [error, setError] = useState('');
   const [balance, setBalance] = useState(null);
   const [kycStatus, setKycStatus] = useState(null);
+  const [showMetaMaskDialog, setShowMetaMaskDialog] = useState(false);
 
   const handleConnect = async () => {
     if (!window.ethereum) {
-      setError("Please install MetaMask!");
+      setShowMetaMaskDialog(true);
       return;
     }
 
@@ -165,8 +166,39 @@ const App = () => {
     }
   }, []);
 
+  const MetaMaskDialog = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-[#edffee] rounded-xl shadow-lg p-6 max-w-md w-full mx-4 border-2 border-green-500">
+        <div className="flex items-center space-x-3 mb-4">
+          <Wallet className="w-6 h-6 text-[#8fef56]" />
+          <h3 className="text-lg font-semibold text-gray-800">MetaMask Not Found</h3>
+        </div>
+        <p className="text-gray-600 mb-6">
+          To use this application, you need to install MetaMask, a cryptocurrency wallet for your browser.
+        </p>
+        <div className="space-y-3">
+          <a
+            href="https://metamask.io/download/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg transition-colors text-center"
+          >
+            Install MetaMask
+          </a>
+          <button
+            onClick={() => setShowMetaMaskDialog(false)}
+            className="block w-full bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-4 rounded-lg transition-colors border border-gray-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[oklch(0.99_0.02_150)] text-black">
+      {showMetaMaskDialog && <MetaMaskDialog />}
       <Header 
         walletData={walletData}
         balance={balance}
