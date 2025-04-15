@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { Wallet, AlertCircle, RefreshCw, LogOut, X } from 'lucide-react';
+import { Wallet, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
 import { ZkMeWidget } from '@zkmelabs/widget';
 import '@zkmelabs/widget/dist/style.css';
 import Header from './components/Header';
@@ -12,7 +12,6 @@ const App = () => {
   const [error, setError] = useState('');
   const [balance, setBalance] = useState(null);
   const [kycStatus, setKycStatus] = useState(null);
-  const [showPopup, setShowPopup] = useState(false);
 
   const handleConnect = async () => {
     if (!window.ethereum) {
@@ -25,7 +24,7 @@ const App = () => {
 
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
+      await window.ethereum.request({ method: 'wallet_requestPermissions', params: [{ eth_accounts: {} }] });
       const signer = provider.getSigner();
       const address = await signer.getAddress();
 
@@ -47,13 +46,20 @@ const App = () => {
     setKycStatus(null);
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('kycVerified');
+  
+    // Force "reconnection" by reloading the page and clearing provider cache
+    if (window.ethereum && window.ethereum._metamask) {
+      // This just disables auto reloading on chain changes temporarily
+      window.ethereum.autoRefreshOnNetworkChange = false;
+    }
   };
+  
 
   const provider = {
     async getAccessToken() {
-      const res = await fetch("http://localhost:8000/api/zkme/token");
-      const json = await res.json();
-      return json.data.accessToken;
+      // const res = await fetch("http://localhost:8000/api/zkme/token");
+      // const json = await res.json();
+      // return json.data.accessToken;
     },
     async getUserAccounts() {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -96,8 +102,15 @@ const App = () => {
     zkMeWidget.launch();
   };
 
-  const handleUnderDevelopment = () => {
-    setShowPopup(true);
+  const handleVerification = async () => {
+    if (!walletData) {
+      // If wallet is not connected, connect it first
+      await handleConnect();
+    }
+    // After wallet is connected (or was already connected), launch KYC
+    if (walletData) {
+      launchKYCWidget();
+    }
   };
 
   useEffect(() => {
@@ -180,10 +193,8 @@ const App = () => {
                 <span className="text-sm">{error}</span>
               </div>
             )}
-
             {!walletData && !initialLoading && (
               <div className="flex flex-col items-center space-y-2">
-                <p className="text-sm text-gray-600">Welcome to Identity Verification</p>
                 <p className="text-sm text-gray-600">Please connect your wallet to verify your identity.</p>
               </div>
             )}
@@ -194,7 +205,8 @@ const App = () => {
                 <p className="text-sm text-gray-600">Connecting to wallet...</p>
               </div>
             )}
-             <div className="bg-white border border-gray-300 rounded-lg p-4 space-y-2">
+
+            <div className="bg-white border border-gray-300 rounded-lg p-4 space-y-2">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium">Network</span>
@@ -202,61 +214,30 @@ const App = () => {
               <p className="text-xs text-gray-400">Make sure you have enough gas fees</p>
             </div>
 
-            {walletData && !loading && (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">Welcome to Identity Verification</p>
-                <button
-                  onClick={handleUnderDevelopment}
-                  className="bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg"
-                >
-                  Verification Now
-                </button>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">Welcome to Identity Verification</p>
+              <button
+                onClick={handleVerification}
+                disabled={kycStatus === 'success' || loading}
+                className="bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg"
+              >
+                {kycStatus === 'success' ? 'KYC Verified' : 'Verify now'}
+              </button>
 
-                {kycStatus === 'success' && (
-                  <div className="bg-green-100 border border-green-600 text-green-800 rounded p-3 text-center">
-                    ✅ KYC Verification complete!
-                  </div>
-                )}
-                {kycStatus === 'fail' && (
-                  <div className="bg-red-100 border border-red-600 text-red-800 rounded p-3 text-center">
-                    ❌ KYC Verification failed. Please try again.
-                  </div>
-                )}
-              </div>
-            )}
-
-           
+              {kycStatus === 'success' && (
+                <div className="bg-green-100 border border-green-600 text-green-800 rounded p-3 text-center">
+                  ✅ KYC Verification complete!
+                </div>
+              )}
+              {kycStatus === 'fail' && (
+                <div className="bg-red-100 border border-red-600 text-red-800 rounded p-3 text-center">
+                  ❌ KYC Verification failed. Please try again.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Popup Notification */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Under Development</h3>
-              <button 
-                onClick={() => setShowPopup(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-gray-600">
-              This feature is currently under development. Please check back later.
-            </p>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => setShowPopup(false)}
-                className="bg-[#8fef56] hover:bg-[#7edf45] text-white px-4 py-2 rounded-lg"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
