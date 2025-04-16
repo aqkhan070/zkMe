@@ -15,6 +15,7 @@ const App = () => {
   const [showMetaMaskDialog, setShowMetaMaskDialog] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState('https://metamask.io/download/');
   const [isMobile, setIsMobile] = useState(false);
+  const [isMetaMaskBrowser, setIsMetaMaskBrowser] = useState(false);
 
   useEffect(() => {
     // Detect if user is on mobile
@@ -22,6 +23,10 @@ const App = () => {
       const userAgent = navigator.userAgent.toLowerCase();
       const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
       setIsMobile(isMobileDevice);
+      
+      // Check if we're in MetaMask's browser
+      const isMetaMask = userAgent.includes('metamask');
+      setIsMetaMaskBrowser(isMetaMask);
     };
     checkMobile();
 
@@ -45,6 +50,7 @@ const App = () => {
   const handleConnect = async () => {
     if (!window.ethereum) {
       if (isMobile) {
+        // Use production URL for MetaMask deep link
         // Use Universal Links format for better cross-platform support
         const dappUrl = 'https://zk-me.vercel.app';
         // For Android, we need to use a different format
@@ -54,6 +60,8 @@ const App = () => {
           // For iOS and other platforms
           window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
         }
+        // Redirect to MetaMask app browser
+        
         return;
       }
       setShowMetaMaskDialog(true);
@@ -65,17 +73,7 @@ const App = () => {
 
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      // First check if we already have permissions
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      
-      if (accounts.length === 0) {
-        // If no accounts are connected, request permissions
-        await window.ethereum.request({ 
-          method: 'wallet_requestPermissions', 
-          params: [{ eth_accounts: {} }] 
-        });
-      }
-
+      await window.ethereum.request({ method: 'wallet_requestPermissions', params: [{ eth_accounts: {} }] });
       const signer = provider.getSigner();
       const address = await signer.getAddress();
 
@@ -86,14 +84,6 @@ const App = () => {
       localStorage.setItem('walletAddress', address);
     } catch (err) {
       setError(err.message);
-      // If there's a permission error on mobile, redirect to MetaMask browser
-      if (isMobile && err.message.includes('permission')) {
-        if (/android/i.test(navigator.userAgent)) {
-          window.location.href = `intent://zk-me.vercel.app#Intent;scheme=https;package=io.metamask;end`;
-        } else {
-          window.location.href = 'https://metamask.app.link/dapp/zk-me.vercel.app';
-        }
-      }
     } finally {
       setLoading(false);
     }
@@ -106,20 +96,10 @@ const App = () => {
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('kycVerified');
   
-    // Instead of reloading, we'll try to reconnect
-    if (window.ethereum) {
-      window.ethereum.request({ 
-        method: 'wallet_requestPermissions', 
-        params: [{ eth_accounts: {} }] 
-      }).then(() => {
-        // After requesting permissions, try to connect again
-        handleConnect();
-      }).catch(() => {
-        // If permission is denied, redirect to MetaMask browser
-        if (isMobile) {
-          window.location.href = 'https://metamask.app.link/dapp/zk-me.vercel.app';
-        }
-      });
+    // Force "reconnection" by reloading the page and clearing provider cache
+    if (window.ethereum && window.ethereum._metamask) {
+      // This just disables auto reloading on chain changes temporarily
+      window.ethereum.autoRefreshOnNetworkChange = false;
     }
   };
   
@@ -223,14 +203,13 @@ const App = () => {
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
         if (accounts.length === 0) {
-          // Instead of disconnecting, try to reconnect
-          handleConnect();
+          handleDisconnect();
         } else {
           handleConnect();
         }
       });
       window.ethereum.on('chainChanged', () => {
-        handleConnect();
+        window.location.reload();
       });
     }
   }, []);
@@ -250,9 +229,7 @@ const App = () => {
         <div className="flex space-x-3">
           {isMobile ? (
             <a
-              href={/android/i.test(navigator.userAgent) 
-                ? "intent://zk-me.vercel.app#Intent;scheme=https;package=io.metamask;end"
-                : "https://metamask.app.link/dapp/zk-me.vercel.app"}
+              href="https://metamask.app.link/dapp/zk-me.vercel.app"
               className="flex-1 bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg transition-colors text-center"
             >
               Open in MetaMask
