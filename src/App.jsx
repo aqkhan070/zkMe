@@ -45,10 +45,15 @@ const App = () => {
   const handleConnect = async () => {
     if (!window.ethereum) {
       if (isMobile) {
-        // Use production URL for MetaMask deep link
+        // Use Universal Links format for better cross-platform support
         const dappUrl = 'https://zk-me.vercel.app';
-        // Redirect to MetaMask app browser
-        window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+        // For Android, we need to use a different format
+        if (/android/i.test(navigator.userAgent)) {
+          window.location.href = `intent://zk-me.vercel.app#Intent;scheme=https;package=io.metamask;end`;
+        } else {
+          // For iOS and other platforms
+          window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+        }
         return;
       }
       setShowMetaMaskDialog(true);
@@ -83,7 +88,11 @@ const App = () => {
       setError(err.message);
       // If there's a permission error on mobile, redirect to MetaMask browser
       if (isMobile && err.message.includes('permission')) {
-        window.location.href = 'https://metamask.app.link/dapp/zk-me.vercel.app';
+        if (/android/i.test(navigator.userAgent)) {
+          window.location.href = `intent://zk-me.vercel.app#Intent;scheme=https;package=io.metamask;end`;
+        } else {
+          window.location.href = 'https://metamask.app.link/dapp/zk-me.vercel.app';
+        }
       }
     } finally {
       setLoading(false);
@@ -241,7 +250,9 @@ const App = () => {
         <div className="flex space-x-3">
           {isMobile ? (
             <a
-              href="https://metamask.app.link/dapp/zk-me.vercel.app"
+              href={/android/i.test(navigator.userAgent) 
+                ? "intent://zk-me.vercel.app#Intent;scheme=https;package=io.metamask;end"
+                : "https://metamask.app.link/dapp/zk-me.vercel.app"}
               className="flex-1 bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg transition-colors text-center"
             >
               Open in MetaMask
