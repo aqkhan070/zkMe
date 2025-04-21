@@ -289,6 +289,11 @@ const App = () => {
                 <p className="text-sm text-gray-600">Please connect your wallet to verify your identity.</p>
               </div>
             )}
+            {walletData && (
+              <div className="flex flex-col items-center space-y-2">
+                <p className="text-sm text-gray-600">Your Wallet is Connected. Click on the Verify button to Start Verification</p>
+              </div>
+            )}
 
             {initialLoading && (
               <div className="flex flex-col items-center space-y-2">
@@ -307,13 +312,15 @@ const App = () => {
 
             <div className="space-y-4">
               <p className="text-sm text-gray-600">Welcome to Identity Verification</p>
-              <button
-                onClick={handleVerification}
-                disabled={kycStatus === 'success' || loading}
-                className="bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg"
-              >
-                {kycStatus === 'success' ? 'KYC Verified' : 'Verify now'}
-              </button>
+              {kycStatus !== 'success' && (
+                <button
+                  onClick={handleVerification}
+                  disabled={loading}
+                  className="bg-[#8fef56] hover:bg-[#7edf45] text-white font-bold py-3 px-4 rounded-lg"
+                >
+                  Verify now
+                </button>
+              )}
 
               {kycStatus === 'success' && (
                 <div className="bg-green-100 border border-green-600 text-green-800 rounded p-3 text-center">
