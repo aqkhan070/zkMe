@@ -124,7 +124,7 @@ const App = () => {
 
   const zkMeWidget = new ZkMeWidget(
     'M2025012255531684563023546877743',
-    'ivest-wellet-frontend',
+    'zKMe KYC',
     '137', // or '0x89' for Polygon Mainnet
     provider,
     {
