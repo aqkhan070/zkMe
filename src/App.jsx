@@ -106,9 +106,9 @@ const App = () => {
 
   const provider = {
     async getAccessToken() {
-      // const res = await fetch("http://localhost:8000/api/zkme/token");
-      // const json = await res.json();
-      // return json.data.accessToken;
+      const res = await fetch("http://technosolx.com/initio/public/api/zkme/token");
+      const json = await res.json();
+      return json.data.accessToken;
     },
     async getUserAccounts() {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
