@@ -123,37 +123,14 @@ const App = () => {
     },
   };
 
-  const zkMeWidget = new ZkMeWidget(
-    'M2025012255531684563023546877743',
-    'zKMe KYC',
-    '137', // or '0x89' for Polygon Mainnet
-    provider,
-    {
-      lv: verificationLevel,
-      programNo: '202504070001',
-      theme: 'dark',
-      locale: 'en',
-    }
-  );
-
-  zkMeWidget.on('kycFinished', (result) => {
-    const { isGrant, associatedAccount } = result;
-    if (isGrant && associatedAccount.toLowerCase() === walletData?.address.toLowerCase()) {
-      setKycStatus('success');
-      localStorage.setItem('kycVerified', 'true');
-    } else {
-      setKycStatus('fail');
-      localStorage.removeItem('kycVerified');
-    }
-  });
+ 
 
   const handleLevel1Verification = async () => {
     if (!walletData) {
       await handleConnect();
     }
     if (walletData) {
-      setVerificationLevel('MeID');
-      launchKYCWidget();
+      launchKYCWidget('MeID'); // 🔥 pass it here
     }
   };
 
@@ -162,14 +139,38 @@ const App = () => {
       await handleConnect();
     }
     if (walletData) {
-      setVerificationLevel('zkKYC');
-      launchKYCWidget();
+      launchKYCWidget('zkKYC'); // 🔥 pass it here
     }
   };
 
-  const launchKYCWidget = () => {
-    zkMeWidget.launch();
+  const launchKYCWidget = (level) => {
+    const dynamicWidget = new ZkMeWidget(
+      'M2025012255531684563023546877743',
+      'zKMe KYC',
+      '137', // Polygon Mainnet
+      provider,
+      {
+        lv: level, // 🔥 directly use passed value instead of waiting for setState
+        programNo: '202504070001',
+        theme: 'dark',
+        locale: 'en',
+      }
+    );
+  
+    dynamicWidget.on('kycFinished', (result) => {
+      const { isGrant, associatedAccount } = result;
+      if (isGrant && associatedAccount.toLowerCase() === walletData?.address.toLowerCase()) {
+        setKycStatus('success');
+        localStorage.setItem('kycVerified', 'true');
+      } else {
+        setKycStatus('fail');
+        localStorage.removeItem('kycVerified');
+      }
+    });
+  
+    dynamicWidget.launch();
   };
+  
 
   const handleVerification = async () => {
     if (!walletData) {
